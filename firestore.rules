@@ -1,0 +1,139 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Global Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+    
+    // palletandcolor@gmail.com is the verified business admin owner
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == "palletandcolor@gmail.com";
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    // Entity Validation Helpers
+    function isValidProduct(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && data.slug is string && data.slug.size() > 0 && data.slug.size() <= 200
+        && data.categoryId is string && data.categoryId.size() <= 128
+        && data.categoryName is string && data.categoryName.size() <= 200
+        && (data.price == null || data.price is number)
+        && data.priceOnEnquiry is bool
+        && data.shortDescription is string && data.shortDescription.size() <= 500
+        && data.description is string && data.description.size() <= 5000
+        && data.images is list
+        && data.mainImage is map
+        && (data.material == null || data.material is string)
+        && (data.dimensions == null || data.dimensions is string)
+        && (data.colorOptions == null || data.colorOptions is string)
+        && (data.careInstructions == null || data.careInstructions is string)
+        && data.availabilityStatus is string && (data.availabilityStatus in ["Available", "Sold", "Made to order", "Out of stock"])
+        && data.featured is bool
+        && data.customizable is bool
+        && data.tags is list
+        && data.active is bool;
+    }
+    
+    function isValidCategory(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && data.slug is string && data.slug.size() > 0 && data.slug.size() <= 200
+        && data.description is string && data.description.size() <= 1000
+        && data.image is map
+        && data.active is bool;
+    }
+    
+    function isValidEnquiryCreate(data) {
+      return data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 200
+        && data.customerEmail is string && data.customerEmail.size() > 0 && data.customerEmail.size() <= 200
+        && data.customerPhone is string && data.customerPhone.size() <= 50
+        && (data.productId == null || (data.productId is string && data.productId.size() <= 128))
+        && (data.productName == null || (data.productName is string && data.productName.size() <= 200))
+        && data.message is string && data.message.size() > 0 && data.message.size() <= 3000
+        && data.preferredContactMethod is string && (data.preferredContactMethod in ["WhatsApp", "Email", "Phone"])
+        && data.status is string && (data.status in ["New", "Contacted", "Completed"]);
+    }
+    
+    function isValidEnquiry(data) {
+      return data.id is string && data.id.size() <= 128
+        && data.customerName is string && data.customerName.size() > 0 && data.customerName.size() <= 200
+        && data.customerEmail is string && data.customerEmail.size() > 0 && data.customerEmail.size() <= 200
+        && data.customerPhone is string && data.customerPhone.size() <= 50
+        && (data.productId == null || (data.productId is string && data.productId.size() <= 128))
+        && (data.productName == null || (data.productName is string && data.productName.size() <= 200))
+        && data.message is string && data.message.size() > 0 && data.message.size() <= 3000
+        && data.preferredContactMethod is string && (data.preferredContactMethod in ["WhatsApp", "Email", "Phone"])
+        && data.status is string && (data.status in ["New", "Contacted", "Completed"]);
+    }
+    
+    function isValidSettings(data) {
+      return data.businessName is string && data.businessName.size() > 0 && data.businessName.size() <= 200
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 200
+        && data.whatsappNumber is string && data.whatsappNumber.size() <= 50
+        && (data.instagramLink == null || data.instagramLink is string)
+        && (data.facebookLink == null || data.facebookLink is string)
+        && (data.aboutText == null || data.aboutText is string)
+        && data.heroTagline is string && data.heroTagline.size() <= 500
+        && (data.deliveryNote == null || data.deliveryNote is string)
+        && (data.customOrderNote == null || data.customOrderNote is string);
+    }
+    
+    // Match Blocks for collections
+    match /products/{productId} {
+      allow get: if (resource == null) || (resource.data.active == true) || isAdmin();
+      allow list: if (resource.data.active == true) || isAdmin();
+      allow create: if isAdmin() && isValidId(productId) && isValidProduct(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidProduct(incoming()) && incoming().updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+    
+    match /categories/{categoryId} {
+      allow get: if (resource == null) || (resource.data.active == true) || isAdmin();
+      allow list: if (resource.data.active == true) || isAdmin();
+      allow create: if isAdmin() && isValidId(categoryId) && isValidCategory(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidCategory(incoming()) && incoming().updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+    
+    match /enquiries/{enquiryId} {
+      allow get, list: if isAdmin();
+      allow create: if isValidId(enquiryId) && isValidEnquiryCreate(incoming()) && incoming().createdAt == request.time;
+      allow update: if (isAdmin() && isValidEnquiry(incoming()) && incoming().updatedAt == request.time) || (
+        // Allow the follow-up ID assignment update
+        incoming().id == enquiryId && incoming().diff(existing()).affectedKeys().hasOnly(['id'])
+      );
+      allow delete: if isAdmin();
+    }
+    
+    match /settings/{documentId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(documentId) && isValidSettings(incoming()) && incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidSettings(incoming()) && incoming().updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+  }
+}

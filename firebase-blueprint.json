@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Artworks or products on display in the gallery",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "categoryName": { "type": "string" },
+        "price": { "type": ["number", "null"] },
+        "priceOnEnquiry": { "type": "boolean" },
+        "shortDescription": { "type": "string" },
+        "description": { "type": "string" },
+        "images": { "type": "array" },
+        "mainImage": { "type": "object" },
+        "material": { "type": "string" },
+        "dimensions": { "type": "string" },
+        "colorOptions": { "type": "string" },
+        "careInstructions": { "type": "string" },
+        "availabilityStatus": { "type": "string", "enum": ["Available", "Sold", "Made to order", "Out of stock"] },
+        "featured": { "type": "boolean" },
+        "customizable": { "type": "boolean" },
+        "tags": { "type": "array" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "slug", "categoryId", "categoryName", "priceOnEnquiry", "shortDescription", "description", "images", "mainImage", "availabilityStatus", "featured", "customizable", "tags", "active"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Art and craft categories",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "object" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "slug", "description", "image", "active"]
+    },
+    "Enquiry": {
+      "title": "Enquiry",
+      "description": "Customer enquiries for artworks",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "productId": { "type": ["string", "null"] },
+        "productName": { "type": ["string", "null"] },
+        "message": { "type": "string" },
+        "preferredContactMethod": { "type": "string", "enum": ["WhatsApp", "Email", "Phone"] },
+        "status": { "type": "string", "enum": ["New", "Contacted", "Completed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "customerName", "customerEmail", "customerPhone", "message", "preferredContactMethod", "status"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Business information and customizations",
+      "type": "object",
+      "properties": {
+        "businessName": { "type": "string" },
+        "email": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "instagramLink": { "type": "string" },
+        "facebookLink": { "type": "string" },
+        "aboutText": { "type": "string" },
+        "heroTagline": { "type": "string" },
+        "deliveryNote": { "type": "string" },
+        "customOrderNote": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["businessName", "email", "whatsappNumber", "heroTagline"]
+    }
+  },
+  "firestore": {
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Product collection"
+    },
+    "categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Category collection"
+    },
+    "enquiries/{enquiryId}": {
+      "schema": "Enquiry",
+      "description": "Enquiry collection"
+    },
+    "settings/{documentId}": {
+      "schema": "Settings",
+      "description": "Settings collection"
+    }
+  }
+}

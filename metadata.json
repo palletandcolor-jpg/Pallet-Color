@@ -1,0 +1,6 @@
+{
+  "name": "Pallet & Color",
+  "description": "A beautiful online art gallery and handcrafted product catalogue featuring resin art, paintings, and home decor with direct WhatsApp and Gmail enquiry channels.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
